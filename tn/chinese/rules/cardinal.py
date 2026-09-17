@@ -81,6 +81,14 @@ class Cardinal(Processor):
         cardinal |= digits**3 + delete("-") + digits**8
         # well-known short phone numbers (110, 12306, etc.) and 11-digit mobile
         phone_digits = digits @ self.build_rule(cross("一", "幺"))
+        # Chinese resident identity card numbers are digit sequences rather
+        # than cardinal values. Match the complete 18-character identifier so
+        # it cannot be split into an 11-digit phone number and a trailing
+        # number. The checksum X is conventionally read as "叉".
+        identity_card = digits**18
+        identity_card |= digits**17 + (cross("X", "叉") | cross("x", "叉"))
+        cardinal |= add_weight(identity_card, -2.0)
+
         phone = string_file(get_abs_path("chinese/data/cardinal/phone.tsv"))
         phone |= phone_digits**11
         phone |= accep("尾号") + (accep("是") | accep("为")).ques + phone_digits**4
